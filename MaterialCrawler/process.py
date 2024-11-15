@@ -54,8 +54,8 @@ def split_curves(png_filename="plot1.png"):
     kmeans = KMeans(n_clusters=k, random_state=0, init=initial_pixels)
 
     fig, axs = plt.subplots(1, k)
-    axbox = plt.axes([0.1, 0.1, 0.8, 0.05])
-    text_box = TextBox(axbox, 'Labels: ')
+    axbox = plt.axes([0.2, 0.1, 0.7, 0.05])
+    text_box = TextBox(axbox, 'Labels: ', initial=" ".join([str(i) for i in range(1, k)]))
     text_box.on_submit(input_handler.submit_target_labels)
     fig.canvas.mpl_connect('key_press_event', close_window)
 
@@ -72,7 +72,7 @@ def split_curves(png_filename="plot1.png"):
 
     plt.show()
 
-    if input_handler.target_labels == "":
+    if input_handler.target_labels == "all":
         print("Use all labels as target labels!!")
         target_labels = [i for i in range(k)]
     else:
