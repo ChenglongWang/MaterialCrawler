@@ -5,6 +5,24 @@ from sklearn.utils import shuffle
 from sklearn.cluster import KMeans, DBSCAN
 
 
+class InputHandler:
+    def __init__(self):
+        self.target_labels = ""
+        self.input_number1 = ""
+        self.input_number2 = ""
+
+    def submit_target_labels(self, text):
+        self.target_labels = text
+
+    def submit_number1(self, text):
+        self.input_number1 = text
+        print(f"Input number for point 1: {self.input_number1}")
+
+    def submit_number2(self, text):
+        self.input_number2 = text
+        print(f"Input number for point 2: {self.input_number2}")
+
+
 def rect_select_callback(eclick, erelease):
     """Callback function for RectangleSelector."""
     x1, y1 = eclick.xdata, eclick.ydata

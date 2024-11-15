@@ -7,37 +7,12 @@ from PIL import Image
 from sklearn.cluster import KMeans
 from utils import (rect_select_callback, toggle_selector, normalize_image, quanti_color_fitting, 
                    quanti_color, recreate_image, close_window, find_intersecton_points, 
-                   fuse_points)
-
-# rect_coords = []
-target_labels = ""
-input_number1 = ""
-input_number2 = ""
-
-
-def submit_target_labels(text):
-    """Callback function for TextBox widget."""
-    global target_labels
-    target_labels = text
-
-
-def submit_number1(text):
-    """Callback function for TextBox widget for point 1."""
-    global input_number1
-    input_number1 = text
-    print(f"Input number for point 1: {input_number1}")
-
-
-def submit_number2(text):
-    """Callback function for TextBox widget for point 2."""
-    global input_number2
-    input_number2 = text
-    print(f"Input number for point 2: {input_number2}")
+                   fuse_points, InputHandler)
 
 
 def split_curves(png_filename="plot1.png"):
     """Split the curves in the image based on selected ROI and initial cluster centers."""
-    global target_labels
+    input_handler = InputHandler()
 
     fig, ax = plt.subplots()
     original_image = Image.open(png_filename)
@@ -81,7 +56,7 @@ def split_curves(png_filename="plot1.png"):
     fig, axs = plt.subplots(1, k)
     axbox = plt.axes([0.1, 0.1, 0.8, 0.05])
     text_box = TextBox(axbox, 'Labels: ')
-    text_box.on_submit(submit_target_labels)
+    text_box.on_submit(input_handler.submit_target_labels)
     fig.canvas.mpl_connect('key_press_event', close_window)
 
     centers, labels, w, h = quanti_color_fitting(cropped_image, kmeans)
@@ -97,11 +72,11 @@ def split_curves(png_filename="plot1.png"):
 
     plt.show()
 
-    if target_labels == "":
+    if input_handler.target_labels == "":
         print("Use all labels as target labels!!")
         target_labels = [i for i in range(k)]
     else:
-        target_labels = [int(label.strip()) for label in target_labels.strip().split()]
+        target_labels = [int(label.strip()) for label in input_handler.target_labels.strip().split()]
         print("Target labels: ", target_labels, type(target_labels))
 
     curve_seeds = [centers[label] for label in target_labels]
@@ -162,7 +137,7 @@ def draw_mask(png_filename='plot1.png'):
 
 def draw_lines(png_filename, start_y, end_y, n_lines=50):
     """Draw horizontal lines on the image and return their coordinates and values."""
-    global input_number1, input_number2
+    input_handler = InputHandler()
 
     original_image = Image.open(png_filename)
     fig, ax = plt.subplots()
@@ -178,18 +153,18 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
 
     axbox1 = plt.axes([0.3, 0.05, 0.1, 0.05])
     text_box1 = TextBox(axbox1, 'Point 1: ')
-    text_box1.on_submit(submit_number1)
+    text_box1.on_submit(input_handler.submit_number1)
 
     axbox2 = plt.axes([0.55, 0.05, 0.1, 0.05])
     text_box2 = TextBox(axbox2, 'Point 2: ')
-    text_box2.on_submit(submit_number2)
+    text_box2.on_submit(input_handler.submit_number2)
 
     fig.canvas.mpl_connect('key_press_event', close_window)
     plt.show()
 
     y_coords = np.linspace(start_y, end_y, n_lines)
 
-    value1, value2 = float(input_number1), float(input_number2)
+    value1, value2 = float(input_handler.input_number1), float(input_handler.input_number2)
     y1, y2 = point1[1], point2[1]
 
     m = (value2 - value1) / (y2 - y1)
@@ -204,9 +179,9 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     fig, ax = plt.subplots()
     ax.imshow(original_image, cmap='gray')
     ax.plot(point1[0], point1[1], 'ro')
-    ax.text(point1[0], point1[1], f'{input_number1}', color='r', fontsize=15, ha='left')
+    ax.text(point1[0], point1[1], f'{input_handler.input_number1}', color='r', fontsize=15, ha='left')
     ax.plot(point2[0], point2[1], 'ro')
-    ax.text(point2[0], point2[1], f'{input_number2}', color='r', fontsize=15, ha='left')
+    ax.text(point2[0], point2[1], f'{input_handler.input_number2}', color='r', fontsize=15, ha='left')
     ax.axis('off')
 
     for y, value in zip(y_coords, y_values):
