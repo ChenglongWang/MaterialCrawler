@@ -8,19 +8,27 @@ from sklearn.cluster import KMeans, DBSCAN
 class InputHandler:
     def __init__(self):
         self.target_labels = ""
-        self.input_number1 = ""
-        self.input_number2 = ""
+        self.y1 = None
+        self.y2 = None
 
     def submit_target_labels(self, text):
         self.target_labels = text
 
-    def submit_number1(self, text):
-        self.input_number1 = text
-        print(f"Input number for point 1: {self.input_number1}")
+    def submit_y1(self, text):
+        self.y1 = float(text)
+        print(f"Input number for point 1: {self.y1}")
 
-    def submit_number2(self, text):
-        self.input_number2 = text
-        print(f"Input number for point 2: {self.input_number2}")
+    def submit_y2(self, text):
+        self.y2 = float(text)
+        print(f"Input number for point 2: {self.y2}")
+
+    def submit_x1(self, text):
+        self.x1 = float(text)
+        print(f"Input number for point 1: {self.x1}")
+
+    def submit_x2(self, text):
+        self.x2 = float(text)
+        print(f"Input number for point 2: {self.x2}")
 
 
 def rect_select_callback(eclick, erelease):

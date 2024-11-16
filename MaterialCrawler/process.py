@@ -15,7 +15,14 @@ def split_curves(png_filename="plot1.png"):
     input_handler = InputHandler()
 
     fig, ax = plt.subplots()
-    original_image = Image.open(png_filename)
+    try:
+        original_image = Image.open(png_filename)
+    except FileNotFoundError:
+        print(f"File {png_filename} not found.")
+        return None
+    except Exception as e:
+        print(f"Error opening image: {e}")
+        return None
     ax.imshow(original_image)
     ax.set_title("Select a ROI on the image, and press 'Q' to confirm")
     ax.axis('off')
@@ -30,7 +37,14 @@ def split_curves(png_filename="plot1.png"):
     plt.show()
 
     # Retrieve rectangle extents directly
+    if not hasattr(toggle_selector, 'RS') or not toggle_selector.RS.extents:
+        print("No ROI selected.")
+        return None
+
     x1, x2, y1, y2 = toggle_selector.RS.extents
+    if x1 == x2 or y1 == y2:
+        print("Invalid ROI selected.")
+        return None
     coords = [(x1, y1), (x2, y2)]
     print(f"Selected rectangle coordinates: {coords}")
 
@@ -44,10 +58,14 @@ def split_curves(png_filename="plot1.png"):
     plt.close(fig)
 
     if len(initial_centers) == 0:
-        print("No initial centers selected")
-        return
+        print("No initial centers selected.")
+        return None
 
-    initial_pixels = [(cropped_image.getpixel((x, y))[0]/255, cropped_image.getpixel((x, y))[1]/255, cropped_image.getpixel((x, y))[2]/255) for x, y in initial_centers]
+    try:
+        initial_pixels = [(cropped_image.getpixel((x, y))[0]/255, cropped_image.getpixel((x, y))[1]/255, cropped_image.getpixel((x, y))[2]/255) for x, y in initial_centers]
+    except Exception as e:
+        print(f"Error processing initial centers: {e}")
+        return None
 
     k = len(initial_centers)
     print("initial_pixels: ", initial_pixels)
@@ -75,6 +93,9 @@ def split_curves(png_filename="plot1.png"):
     if input_handler.target_labels == "all":
         print("Use all labels as target labels!!")
         target_labels = [i for i in range(k)]
+    elif input_handler.target_labels == "":
+        print("No target labels selected.")
+        return None
     else:
         target_labels = [int(label.strip()) for label in input_handler.target_labels.strip().split()]
         print("Target labels: ", target_labels, type(target_labels))
@@ -98,13 +119,20 @@ def split_curves(png_filename="plot1.png"):
         axs[j, i].axis('off')
 
     plt.show()
-    return filtered_images
+    return filtered_images if filtered_images else None
 
 
 def draw_mask(png_filename='plot1.png'):
     """Draw a mask on the image and return the vertices."""
     fig, ax = plt.subplots()
-    original_image = Image.open(png_filename)
+    try:
+        original_image = Image.open(png_filename)
+    except FileNotFoundError:
+        print(f"File {png_filename} not found.")
+        return None
+    except Exception as e:
+        print(f"Error opening image: {e}")
+        return None
     ax.imshow(original_image)
     ax.axis('off')
     ax.set_title("Draw a mask on the image, and press 'Q' to confirm")
@@ -121,6 +149,10 @@ def draw_mask(png_filename='plot1.png'):
 
     cid = fig.canvas.mpl_connect('button_press_event', onclick_polygon)
     plt.show()
+
+    if len(vertices) < 3:
+        print("Not enough vertices to form a polygon.")
+        return None
 
     fig, ax = plt.subplots()
     ax.imshow(original_image)
@@ -139,33 +171,60 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     """Draw horizontal lines on the image and return their coordinates and values."""
     input_handler = InputHandler()
 
-    original_image = Image.open(png_filename)
+    try:
+        original_image = Image.open(png_filename)
+    except FileNotFoundError:
+        print(f"File {png_filename} not found.")
+        return None, None
+    except Exception as e:
+        print(f"Error opening image: {e}")
+        return None, None
+
     fig, ax = plt.subplots()
     ax.imshow(original_image, cmap='gray')
     ax.axis('off')
-    ax.set_title("Select Two ref points on the image!")
-    points = plt.ginput(2)
-    if len(points) != 2:
-        print("Two points were not selected.")
-        return
-    point1, point2 = points
-    print(f"Selected points: {point1}, {point2}")
+    ax.set_title("Select y1, y2, x1 ,x2 points on the image!")
+    points = plt.ginput(4)
+    if len(points) != 4:
+        print("4 reference points were not selected.")
+        return None, None
+    point_y1, point_y2, point_x1, point_x2 = points
+    print(f"Selected points: {point_y1}, {point_y2}, {point_x1}, {point_x2}")
+
+    ax.plot(point_y1[0], point_y1[1], 'ro')
+    ax.plot(point_y2[0], point_y2[1], 'bo')
+    ax.plot(point_x1[0], point_x1[1], 'yo')
+    ax.plot(point_x2[0], point_x2[1], 'go')
 
     axbox1 = plt.axes([0.3, 0.05, 0.1, 0.05])
-    text_box1 = TextBox(axbox1, 'Point 1: ')
-    text_box1.on_submit(input_handler.submit_number1)
+    text_box1 = TextBox(axbox1, 'Point1:', hovercolor='red')
+    text_box1.on_submit(input_handler.submit_y1)
 
-    axbox2 = plt.axes([0.55, 0.05, 0.1, 0.05])
-    text_box2 = TextBox(axbox2, 'Point 2: ')
-    text_box2.on_submit(input_handler.submit_number2)
+    axbox2 = plt.axes([0.5, 0.05, 0.1, 0.05])
+    text_box2 = TextBox(axbox2, 'Point2:', hovercolor='b')
+    text_box2.on_submit(input_handler.submit_y2)
+
+    axbox3 = plt.axes([0.7, 0.05, 0.1, 0.05])
+    text_box3 = TextBox(axbox3, 'Point3:', hovercolor='y')
+    text_box3.on_submit(input_handler.submit_x1)
+
+    axbox4 = plt.axes([0.9, 0.05, 0.1, 0.05])
+    text_box4 = TextBox(axbox4, 'Point4:', hovercolor='g')
+    text_box4.on_submit(input_handler.submit_x2)
 
     fig.canvas.mpl_connect('key_press_event', close_window)
     plt.show()
 
     y_coords = np.linspace(start_y, end_y, n_lines)
 
-    value1, value2 = float(input_handler.input_number1), float(input_handler.input_number2)
-    y1, y2 = point1[1], point2[1]
+    try:
+        value1 = float(input_handler.y1)
+        value2 = float(input_handler.y2)
+    except ValueError:
+        print("Invalid numeric inputs for reference points.")
+        return None, None
+
+    y1, y2 = point_y1[1], point_y2[1]
 
     m = (value2 - value1) / (y2 - y1)
     b = value1 - m * y1
@@ -178,22 +237,26 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
 
     fig, ax = plt.subplots()
     ax.imshow(original_image, cmap='gray')
-    ax.plot(point1[0], point1[1], 'ro')
-    ax.text(point1[0], point1[1], f'{input_handler.input_number1}', color='r', fontsize=15, ha='left')
-    ax.plot(point2[0], point2[1], 'ro')
-    ax.text(point2[0], point2[1], f'{input_handler.input_number2}', color='r', fontsize=15, ha='left')
+    ax.plot(point_y1[0], point_y1[1], 'ro')
+    ax.text(point_y1[0], point_y1[1], f'{input_handler.y1}', color='r', fontsize=15, ha='left')
+    ax.plot(point_y2[0], point_y2[1], 'ro')
+    ax.text(point_y2[0], point_y2[1], f'{input_handler.y2}', color='r', fontsize=15, ha='left')
     ax.axis('off')
 
     for y, value in zip(y_coords, y_values):
         ax.axhline(y=y, color='yellow', linestyle='-', lw=0.5)
-        ax.text(point1[0], y, f'{value:.2f}', color='black', fontsize=6, ha='right')
+        ax.text(point_y1[0], y, f'{value:.2f}', color='black', fontsize=6, ha='right')
 
     plt.show()
     return y_coords, y_values
 
 
-def final_adjust_points(filtered_images, line_coords, line_vlaues, polygon_mask: Path):
+def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask: Path):
     """Allow user to manually adjust intersection points."""
+    if not filtered_images or not line_coords.any() or not line_values.any() or not polygon_mask:
+        print("Invalid inputs to final_adjust_points.")
+        return
+
     def on_modify(event):
         if event.inaxes:
             if event.button == 1:
@@ -218,8 +281,12 @@ def final_adjust_points(filtered_images, line_coords, line_vlaues, polygon_mask:
         plt.draw()
 
     for idx, filtered_image in enumerate(filtered_images):
+        if filtered_image is None:
+            print(f"Filtered image at index {idx} is invalid.")
+            continue
+
         print("Processing Curve: ", idx, end=", ")
-        intersection_points = find_intersecton_points(filtered_image, line_coords, line_vlaues)
+        intersection_points = find_intersecton_points(filtered_image, line_coords, line_values)
         intersection_points = fuse_points(intersection_points)
 
         fig, ax = plt.subplots()
@@ -240,13 +307,22 @@ def final_adjust_points(filtered_images, line_coords, line_vlaues, polygon_mask:
 
 if __name__ == "__main__":
     filename = "plot1.png"
-    filtered_images = split_curves()
+    filtered_images = split_curves(filename)
+    if not filtered_images:
+        print("Failed to split curves.")
+        exit(1)
 
     vertices = draw_mask(filename)
+    if not vertices:
+        print("Failed to draw mask.")
+        exit(1)
 
     y_coords = [vertex[1] for vertex in vertices]
     max_y, min_y = max(y_coords), min(y_coords)
-    line_coords, line_vlaues = draw_lines(filename, max_y, min_y, n_lines=60)
+    line_coords, line_values = draw_lines(filename, max_y, min_y, n_lines=60)
+    if line_coords is None or line_values is None:
+        print("Failed to draw lines.")
+        exit(1)
 
     polygon_mask = Path(vertices)
-    final_adjust_points(filtered_images, line_coords, line_vlaues, polygon_mask)
+    final_adjust_points(filtered_images, line_coords, line_values, polygon_mask)
