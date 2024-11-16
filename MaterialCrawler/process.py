@@ -196,19 +196,19 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     ax.plot(point_x1[0], point_x1[1], 'yo')
     ax.plot(point_x2[0], point_x2[1], 'go')
 
-    axbox1 = plt.axes([0.3, 0.05, 0.1, 0.05])
-    text_box1 = TextBox(axbox1, 'Point1:', hovercolor='red')
+    axbox1 = plt.axes([0.2, 0.05, 0.1, 0.05])
+    text_box1 = TextBox(axbox1, 'Point1:', hovercolor='r')
     text_box1.on_submit(input_handler.submit_y1)
 
-    axbox2 = plt.axes([0.5, 0.05, 0.1, 0.05])
+    axbox2 = plt.axes([0.4, 0.05, 0.1, 0.05])
     text_box2 = TextBox(axbox2, 'Point2:', hovercolor='b')
     text_box2.on_submit(input_handler.submit_y2)
 
-    axbox3 = plt.axes([0.7, 0.05, 0.1, 0.05])
+    axbox3 = plt.axes([0.6, 0.05, 0.1, 0.05])
     text_box3 = TextBox(axbox3, 'Point3:', hovercolor='y')
     text_box3.on_submit(input_handler.submit_x1)
 
-    axbox4 = plt.axes([0.9, 0.05, 0.1, 0.05])
+    axbox4 = plt.axes([0.8, 0.05, 0.1, 0.05])
     text_box4 = TextBox(axbox4, 'Point4:', hovercolor='g')
     text_box4.on_submit(input_handler.submit_x2)
 
@@ -299,10 +299,10 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
                 ax.plot(point[1], point[0], 'r+', markersize=4)
                 masked_intersection_points.append(point)
 
-        print("Num Intersection points: ", len(masked_intersection_points))
+        num_intersection_pt = len(masked_intersection_points)
         cid = fig.canvas.mpl_connect('button_press_event', on_modify)
         plt.show()
-        print("Final Num Intersection points: ", len(masked_intersection_points))
+        print(f"Num Intersection points: {num_intersection_pt} => {len(masked_intersection_points)}")
 
 
 if __name__ == "__main__":
