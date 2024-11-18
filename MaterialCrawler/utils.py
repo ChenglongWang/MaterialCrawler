@@ -15,21 +15,30 @@ class InputHandler:
         self.target_labels = text
 
     def submit_y1(self, text):
-        self.y1 = float(text)
+        self.y1 = convert_to_numeric(text)
         print(f"Input number for point 1: {self.y1}")
 
     def submit_y2(self, text):
-        self.y2 = float(text)
+        self.y2 = convert_to_numeric(text)
         print(f"Input number for point 2: {self.y2}")
 
     def submit_x1(self, text):
-        self.x1 = float(text)
+        self.x1 = convert_to_numeric(text)
         print(f"Input number for point 1: {self.x1}")
 
     def submit_x2(self, text):
-        self.x2 = float(text)
+        self.x2 = convert_to_numeric(text)
         print(f"Input number for point 2: {self.x2}")
 
+
+def convert_to_numeric(text):
+    try:
+        value = float(text)
+    except ValueError:
+        print("Invalid numeric inputs for reference points.")
+        return None
+    else:
+        return value
 
 def rect_select_callback(eclick, erelease):
     """Callback function for RectangleSelector."""

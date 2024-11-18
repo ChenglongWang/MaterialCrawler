@@ -167,7 +167,7 @@ def draw_mask(png_filename='plot1.png'):
     return vertices
 
 
-def draw_lines(png_filename, start_y, end_y, n_lines=50):
+def draw_lines(png_filename, start_y, end_y, start_x, end_x, n_lines=50, visible_lines=10):
     """Draw horizontal lines on the image and return their coordinates and values."""
     input_handler = InputHandler()
 
@@ -215,13 +215,10 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     fig.canvas.mpl_connect('key_press_event', close_window)
     plt.show()
 
-    y_coords = np.linspace(start_y, end_y, n_lines)
-
-    try:
-        value1 = float(input_handler.y1)
-        value2 = float(input_handler.y2)
-    except ValueError:
-        print("Invalid numeric inputs for reference points.")
+    value1 = input_handler.y1
+    value2 = input_handler.y2
+    if value1 is None or value2 is None:
+        print("Invalid y1, y2 values.")
         return None, None
 
     y1, y2 = point_y1[1], point_y2[1]
@@ -229,11 +226,28 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     m = (value2 - value1) / (y2 - y1)
     b = value1 - m * y1
 
+    y_coords = np.linspace(start_y, end_y, n_lines)
     value_start = m * start_y + b
     value_end = m * end_y + b
 
     y_values = np.linspace(value_start, value_end, n_lines)
     print("y_values: ", value_start, value_end)
+
+    # calcluate x1, x2
+    x1, x2 = point_x1[0], point_x2[0]
+    value1 = input_handler.x1
+    value2 = input_handler.x2
+    if value1 is None or value2 is None:
+        print("Invalid x1, x2 values.")
+        return None, None
+
+    m = (value2 - value1) / (x2 - x1)
+    b = value1 - m * x1
+    x_coords = np.linspace(start_x, end_x, n_lines)
+    value_start = m * start_x + b
+    value_end = m * end_x + b
+    x_values = np.linspace(value_start, value_end, n_lines)
+    print("x_values: ", value_start, value_end)
 
     fig, ax = plt.subplots()
     ax.imshow(original_image, cmap='gray')
@@ -243,12 +257,15 @@ def draw_lines(png_filename, start_y, end_y, n_lines=50):
     ax.text(point_y2[0], point_y2[1], f'{input_handler.y2}', color='r', fontsize=15, ha='left')
     ax.axis('off')
 
-    for y, value in zip(y_coords, y_values):
+    ds = n_lines // visible_lines
+    for y, x, value_y, value_x in zip(y_coords[::ds], x_coords[::ds], y_values[::ds], x_values[::ds]):
         ax.axhline(y=y, color='yellow', linestyle='-', lw=0.5)
-        ax.text(point_y1[0], y, f'{value:.2f}', color='black', fontsize=6, ha='right')
+        ax.axvline(x=x, color='blue', linestyle='-', lw=0.5)
+        ax.text(point_y1[0], y, f'{value_y:.2f}', color='black', fontsize=8, ha='right')
+        ax.text(x, point_x1[1], f'{value_x:.2f}', color='black', fontsize=8, ha='right', va='top')
 
     plt.show()
-    return y_coords, y_values
+    return y_coords, y_values, (m, b)
 
 
 def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask: Path):
@@ -262,6 +279,7 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
             if event.button == 1:
                 masked_intersection_points.append((event.ydata, event.xdata, -1))
                 ax.plot(event.xdata, event.ydata, 'g+')
+                print("Point added!")
                 plt.draw()
             elif event.button == 3:
                 if masked_intersection_points:
@@ -285,7 +303,7 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
             print(f"Filtered image at index {idx} is invalid.")
             continue
 
-        print("Processing Curve: ", idx, end=", ")
+        print("Processing Curve: ", idx)
         intersection_points = find_intersecton_points(filtered_image, line_coords, line_values)
         intersection_points = fuse_points(intersection_points)
 
@@ -306,7 +324,7 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
 
 
 if __name__ == "__main__":
-    filename = "plot1.png"
+    filename = "../plot1.png"
     filtered_images = split_curves(filename)
     if not filtered_images:
         print("Failed to split curves.")
@@ -318,8 +336,10 @@ if __name__ == "__main__":
         exit(1)
 
     y_coords = [vertex[1] for vertex in vertices]
+    x_coords = [vertex[0] for vertex in vertices]
     max_y, min_y = max(y_coords), min(y_coords)
-    line_coords, line_values = draw_lines(filename, max_y, min_y, n_lines=60)
+    max_x, min_x = max(x_coords), min(x_coords)
+    line_coords, line_values, x_m_b = draw_lines(filename, max_y, min_y, max_x, min_x, n_lines=100, visible_lines=10)
     if line_coords is None or line_values is None:
         print("Failed to draw lines.")
         exit(1)
