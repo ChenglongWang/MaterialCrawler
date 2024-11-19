@@ -27,5 +27,5 @@ Material Crawler is a Python project designed to process images, split curves, d
 
 
 ```sh
-python  --filename path/to/image.png --n-lines 1000 --output path/to/output.json
+python MaterialCrawler/process.py --filename path/to/image.png --n-lines 1000 --output path/to/output.json
 ```
