@@ -1,8 +1,12 @@
+from ast import parse
+import json
+import numpy as np
+import argparse
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector, TextBox
 import matplotlib.patches as patches
 from matplotlib.path import Path
-import numpy as np
 from PIL import Image
 from sklearn.cluster import KMeans
 from utils import (rect_select_callback, toggle_selector, normalize_image, quanti_color_fitting, 
@@ -261,8 +265,8 @@ def draw_lines(png_filename, start_y, end_y, start_x, end_x, n_lines=50, visible
     for y, x, value_y, value_x in zip(y_coords[::ds], x_coords[::ds], y_values[::ds], x_values[::ds]):
         ax.axhline(y=y, color='yellow', linestyle='-', lw=0.5)
         ax.axvline(x=x, color='blue', linestyle='-', lw=0.5)
-        ax.text(point_y1[0], y, f'{value_y:.2f}', color='black', fontsize=8, ha='right')
-        ax.text(x, point_x1[1], f'{value_x:.2f}', color='black', fontsize=8, ha='right', va='top')
+        ax.text(point_y1[0]-10, y, f'{value_y:.2f}', color='black', fontsize=8, ha='right')
+        ax.text(x, point_x1[1]+20, f'{value_x:.1f}', color='black', fontsize=6, ha='right', va='top')
 
     plt.show()
     return y_coords, y_values, (m, b)
@@ -298,7 +302,8 @@ def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, po
             ax.plot(x, y, 'r+', markersize=4)
         plt.draw()
 
-    for idx, filtered_image in enumerate(filtered_images):
+    final_points_list = {}
+    for idx, filtered_image in enumerate(filtered_images, start=1):
         if filtered_image is None:
             print(f"Filtered image at index {idx} is invalid.")
             continue
@@ -310,25 +315,37 @@ def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, po
         fig, ax = plt.subplots()
         ax.imshow(filtered_image)
         ax.axis('off')
+        ax.set_title("Left click to add a point, right click to remove a point, and press 'Q' to confirm")
 
         masked_intersection_points = []
         masked_points_x = []
+        masked_points_y_value = []
         for point in intersection_points:
             if polygon_mask.contains_point((point[1], point[0])):
                 ax.plot(point[1], point[0], 'r+', markersize=4)
                 masked_intersection_points.append(point)
                 masked_points_x.append(point[1])
+                masked_points_y_value.append(point[2])
 
         num_intersection_pt = len(masked_intersection_points)
         cid = fig.canvas.mpl_connect('button_press_event', on_modify)
         plt.show()
         inter_pt_x = x_m_b[0] * np.asarray(masked_points_x) + x_m_b[1]
-        print("Points x range:", np.min(inter_pt_x), np.max(inter_pt_x))
+        final_points_list[f"Curve_{idx}"] = list(zip(inter_pt_x.tolist(), masked_points_y_value))
         print(f"Num Intersection points: {num_intersection_pt} => {len(masked_intersection_points)}")
+    return final_points_list
 
 
 if __name__ == "__main__":
-    filename = "../plot1.png"
+    parser = argparse.ArgumentParser(description="Process an image to split curves, draw mask, and adjust points.")
+    parser.add_argument('--filename', type=str, default='./plot1.png', help="Path to the image file.")
+    parser.add_argument('--n-lines', type=int, default=100, help="Number of lines to catch the points.")
+    parser.add_argument('--visible-lines', type=int, default=20, help="Number of lines to display.")
+    parser.add_argument('--output', type=str, default='./points_list.json', help="Path to the output file.")
+
+    args = parser.parse_args()
+
+    filename = args.filename
     filtered_images = split_curves(filename)
     if not filtered_images:
         print("Failed to split curves.")
@@ -343,10 +360,12 @@ if __name__ == "__main__":
     x_coords = [vertex[0] for vertex in vertices]
     max_y, min_y = max(y_coords), min(y_coords)
     max_x, min_x = max(x_coords), min(x_coords)
-    line_coords, line_values, x_m_b = draw_lines(filename, max_y, min_y, max_x, min_x, n_lines=100, visible_lines=10)
+    line_coords, line_values, x_m_b = draw_lines(filename, max_y, min_y, max_x, min_x, n_lines=args.n_lines, visible_lines=args.visible_lines)
     if line_coords is None or line_values is None:
         print("Failed to draw lines.")
         exit(1)
 
     polygon_mask = Path(vertices)
-    final_adjust_points(filtered_images, line_coords, line_values, x_m_b, polygon_mask)
+    points_list = final_adjust_points(filtered_images, line_coords, line_values, x_m_b, polygon_mask)
+    with open(args.output, 'w') as file:
+        json.dump(points_list, file, indent=2)
