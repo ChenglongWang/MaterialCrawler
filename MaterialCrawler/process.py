@@ -315,7 +315,7 @@ def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, po
         fig, ax = plt.subplots()
         ax.imshow(filtered_image)
         ax.axis('off')
-        ax.set_title("Left click to add a point, right click to remove a point, and press 'Q' to confirm")
+        ax.set_title("Left click to add point, right click to remove point, press 'Q' to confirm")
 
         masked_intersection_points = []
         masked_points_x = []
