@@ -268,9 +268,9 @@ def draw_lines(png_filename, start_y, end_y, start_x, end_x, n_lines=50, visible
     return y_coords, y_values, (m, b)
 
 
-def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask: Path):
+def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, polygon_mask: Path):
     """Allow user to manually adjust intersection points."""
-    if not filtered_images or not line_coords.any() or not line_values.any() or not polygon_mask:
+    if not filtered_images or not y_line_coords.any() or not y_line_values.any() or not polygon_mask:
         print("Invalid inputs to final_adjust_points.")
         return
 
@@ -304,7 +304,7 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
             continue
 
         print("Processing Curve: ", idx)
-        intersection_points = find_intersecton_points(filtered_image, line_coords, line_values)
+        intersection_points = find_intersecton_points(filtered_image, y_line_coords, y_line_values)
         intersection_points = fuse_points(intersection_points)
 
         fig, ax = plt.subplots()
@@ -312,14 +312,18 @@ def final_adjust_points(filtered_images, line_coords, line_values, polygon_mask:
         ax.axis('off')
 
         masked_intersection_points = []
+        masked_points_x = []
         for point in intersection_points:
             if polygon_mask.contains_point((point[1], point[0])):
                 ax.plot(point[1], point[0], 'r+', markersize=4)
                 masked_intersection_points.append(point)
+                masked_points_x.append(point[1])
 
         num_intersection_pt = len(masked_intersection_points)
         cid = fig.canvas.mpl_connect('button_press_event', on_modify)
         plt.show()
+        inter_pt_x = x_m_b[0] * np.asarray(masked_points_x) + x_m_b[1]
+        print("Points x range:", np.min(inter_pt_x), np.max(inter_pt_x))
         print(f"Num Intersection points: {num_intersection_pt} => {len(masked_intersection_points)}")
 
 
@@ -345,4 +349,4 @@ if __name__ == "__main__":
         exit(1)
 
     polygon_mask = Path(vertices)
-    final_adjust_points(filtered_images, line_coords, line_values, polygon_mask)
+    final_adjust_points(filtered_images, line_coords, line_values, x_m_b, polygon_mask)
