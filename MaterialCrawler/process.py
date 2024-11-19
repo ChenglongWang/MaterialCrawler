@@ -273,7 +273,7 @@ def draw_lines(png_filename, start_y, end_y, start_x, end_x, n_lines=50, visible
     return y_coords, y_values, (m, b)
 
 
-def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, polygon_mask: Path):
+def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, polygon_mask: Path, threshold=3):
     """Allow user to manually adjust intersection points."""
     if not filtered_images or not y_line_coords.any() or not y_line_values.any() or not polygon_mask:
         print("Invalid inputs to final_adjust_points.")
@@ -311,7 +311,7 @@ def final_adjust_points(filtered_images, y_line_coords, y_line_values, x_m_b, po
 
         print("Processing Curve: ", idx)
         intersection_points = find_intersecton_points(filtered_image, y_line_coords, y_line_values)
-        intersection_points = fuse_points(intersection_points)
+        intersection_points = fuse_points(intersection_points, min_samples=threshold)
 
         fig, ax = plt.subplots()
         ax.imshow(filtered_image)
@@ -342,6 +342,7 @@ if __name__ == "__main__":
     parser.add_argument('--filename', type=str, default='./plot1.png', help="Path to the image file.")
     parser.add_argument('--n-lines', type=int, default=100, help="Number of lines to catch the points.")
     parser.add_argument('--visible-lines', type=int, default=20, help="Number of lines to display.")
+    parser.add_argument('--threshold', type=int, default=3, help="Threshold for DBSCAN clustering.")
     parser.add_argument('--output', type=str, default='./points_list.json', help="Path to the output file.")
 
     args = parser.parse_args()
@@ -367,6 +368,6 @@ if __name__ == "__main__":
         exit(1)
 
     polygon_mask = Path(vertices)
-    points_list = final_adjust_points(filtered_images, line_coords, line_values, x_m_b, polygon_mask)
+    points_list = final_adjust_points(filtered_images, line_coords, line_values, x_m_b, polygon_mask, threshold=args.threshold)
     with open(args.output, 'w') as file:
         json.dump(points_list, file, indent=2)
