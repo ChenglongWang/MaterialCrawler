@@ -1,5 +1,6 @@
 from ast import parse
 import json
+from math import ceil
 import numpy as np
 import argparse
 
@@ -112,7 +113,7 @@ def split_curves(png_filename="plot1.png"):
     new_original_image = recreate_image(centers, labels, w, h)
 
     filtered_images = []
-    fig, axs = plt.subplots(2, len(curve_seeds)//2)
+    fig, axs = plt.subplots(2, ceil(len(curve_seeds)/2))
     for idx, seed in enumerate(curve_seeds):
         filtered_image = np.zeros_like(new_original_image)
         mask = np.all(new_original_image == seed, axis=-1)
